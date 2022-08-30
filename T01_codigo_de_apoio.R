@@ -66,24 +66,6 @@ print("Validação: Número de exemplos e atributos")
 dim(val_set)
 
 
-
-head(train_set)
-train_set$sunday <- as.numeric(train_set$weekday == "Sunday")
-val_set$sunday <- as.numeric(val_set$weekday == "Sunday")
-train_set$monday <- as.numeric(train_set$weekday == "Monday")
-val_set$monday <- as.numeric(val_set$weekday == "Monday")
-train_set$tuesday <- as.numeric(train_set$weekday == "Tuesday")
-val_set$tuesday <- as.numeric(val_set$weekday == "Tuesday")
-train_set$wednesday <- as.numeric(train_set$weekday == "Wednesday")
-val_set$wednesday <- as.numeric(val_set$weekday == "Wednesday")
-train_set$thursday <- as.numeric(train_set$weekday == "Thursday")
-val_set$thursday <- as.numeric(val_set$weekday == "Thursday")
-train_set$friday <- as.numeric(train_set$weekday == "Friday")
-val_set$friday <- as.numeric(val_set$weekday == "Friday")
-train_set$saturday <- as.numeric(train_set$weekday == "Saturday")
-val_set$saturday <- as.numeric(val_set$weekday == "Saturday")
-
-
 train_mean_features <- apply(train_set[c(1:17)],2, mean)
 val_mean_features <- apply(val_set[c(1:17)],2, mean)
 train_max_features <- apply(train_set[c(1:17)],2, max)
@@ -149,14 +131,25 @@ mae_val_baseline <- MAE(valPred, val_set$target)
 mae_val_baseline
 
 
-#baseline <- lm(formula=target ~ n_tokens_title + average_token_length + num_keywords + kw_avg_max + global_subjectivity + global_sentiment_polarity +
-#               global_rate_positive_words + global_rate_negative_words + rate_positive_words + rate_negative_words + avg_positive_polarity + avg_negative_polarity +
-#                 log_n_tokens_content + log_num_hrefs + root2_num_self_hrefs + log_self_reference_max_shares + log_self_reference_avg_sharess + 
-#                 sunday + monday + tuesday + wednesday + thursday + friday + saturday
-#               , data=train_set)
-
-#summary(baseline)
-
-valPred <- predict(baseline, val_set)
-trainPred <- predict(baseline, train_set)
-
+total_mae_train_noCat <- c()
+total_mae_val_noCat <- c()
+for (i in 1:30){
+  hypothesis <- getHypothesis(feature_names, categorical_feature_names, i)
+  model_poly <- lm(formula=hypothesis, data=train_set)
+  
+  valPred <- predict(model_poly, val_set)
+  trainPred <- predict(model_poly, train_set)
+  
+  mae_train <- MAE(trainPred, train_set$target)
+  total_mae_train_noCat[i] <- mae_train
+  
+  mae_val <- MAE(valPred, val_set$target)
+  total_mae_val_noCat[i] <- mae_val
+  
+}
+total_mae_train_noCat
+total_mae_val_noCat
+plot(total_mae_train_noCat, xlab="Complexity", ylab="Error", 
+     pch="+", col="red",  xaxt="n", 
+     ylim=c(min(c(total_mae_train_noCat, total_mae_val_noCat, mae_val_baseline)),
+            max(c(total_mae_train_noCat, total_mae_val_noCat, mae_val_baseline))))
